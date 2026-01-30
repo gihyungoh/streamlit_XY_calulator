@@ -97,8 +97,8 @@ if st.button("계산"):
     X2, Y2, X, Y = calc_all_interpolated(A, B, H)
 
     st.subheader("📊 계산 결과")
-    st.write(f"단축 길이: {2*X2:.3f}")
-    st.write(f"장축 길이: {2*Y2:.3f}")
+    st.write(f"단축 길이: {X2:.3f}")
+    st.write(f"장축 길이: {Y2:.3f}")
     st.write(f"X: {X:.3f}")
     st.write(f"Y: {Y:.3f}")
 
