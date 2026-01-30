@@ -5,12 +5,11 @@ import matplotlib.pyplot as plt
 
 
 def calc_all_interpolated(A, B, H):
-    # ✅ A < B 자동 보정
     A, B = sorted([A, B])
 
     k = math.sqrt(2.8 / math.pi)
-    X2 = k * A   # 단축
-    Y2 = k * B   # 장축
+    X2 = k * A
+    Y2 = k * B
 
     H_list = [0.3, 0.5, 0.7, 0.9, 1.1]
     coeffs = {
@@ -58,7 +57,7 @@ def draw_ellipse(X2, Y2):
     ax.axhline(0, color="gray", linewidth=0.5)
     ax.axvline(0, color="gray", linewidth=0.5)
 
-    ax.set_aspect("equal", adjustable="box")
+    ax.set_aspect("equal")
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
     ax.set_title("X2-단축 / Y2-장축 타원")
@@ -71,14 +70,12 @@ def draw_ellipse(X2, Y2):
 st.set_page_config(page_title="계산기", layout="centered")
 st.title("📐 계산기 (H = 0.2 ~ 1.2)")
 
-A_input = st.number_input("A 값", value=0.0)
-B_input = st.number_input("B 값", value=0.0)
+A_input = st.number_input("A 값", min_value=0.0, value=1.0)
+B_input = st.number_input("B 값", min_value=0.0, value=2.0)
 H = st.number_input("H 값", min_value=0.2, max_value=1.2, value=0.3, step=0.1)
 
-# ✅ 보정 안내
 A, B = sorted([A_input, B_input])
-if A_input != B_input:
-    st.caption(f"✅ 입력 보정됨 → A = {A}, B = {B}")
+st.caption(f"✅ 내부 계산값 → A = {A}, B = {B}")
 
 if st.button("계산"):
     X2, Y2, X, Y = calc_all_interpolated(A_input, B_input, H)
@@ -89,7 +86,10 @@ if st.button("계산"):
     st.write(f"X: {X:.3f}")
     st.write(f"Y: {Y:.3f}")
 
-    # ✅ 타원 그리기
-    st.subheader("🟢 타원 시각화")
-    fig = draw_ellipse(X2, Y2)
-    st.pyplot(fig)
+    if X2 > 0 and Y2 > 0:
+        st.subheader("🟢 타원 시각화")
+        fig = draw_ellipse(X2, Y2)
+        st.pyplot(fig)
+        plt.close(fig)
+    else:
+        st.warning("A, B 값이 0보다 커야 타원을 그릴 수 있습니다.")
