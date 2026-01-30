@@ -1,15 +1,16 @@
 import math
 import streamlit as st
 import numpy as np
-import plotly.graph_objects as go
+import pandas as pd
+import altair as alt
 
 
 def calc_all_interpolated(A, B, H):
     A, B = sorted([A, B])
 
     k = math.sqrt(2.8 / math.pi)
-    X2 = k * A   # 단축 반지름
-    Y2 = k * B   # 장축 반지름
+    X2 = k * A
+    Y2 = k * B
 
     H_list = [0.3, 0.5, 0.7, 0.9, 1.1]
     coeffs = {
@@ -43,55 +44,45 @@ def calc_all_interpolated(A, B, H):
     return X2, Y2, X, Y
 
 
-def draw_ellipse_plotly(X2, Y2):
+def draw_ellipse_altair(X2, Y2):
     theta = np.linspace(0, 2 * np.pi, 400)
-    x = X2 * np.cos(theta)
-    y = Y2 * np.sin(theta)
 
-    fig = go.Figure()
+    df_ellipse = pd.DataFrame({
+        "x": X2 * np.cos(theta),
+        "y": Y2 * np.sin(theta),
+        "type": "ellipse"
+    })
 
-    # ✅ 타원
-    fig.add_trace(go.Scatter(
-        x=x, y=y,
-        mode="lines",
-        name="Ellipse"
-    ))
+    df_axes = pd.DataFrame({
+        "x": [-X2, X2, 0, 0],
+        "y": [0, 0, -Y2, Y2],
+        "type": [
+            f"단축 = {2*X2:.3f}",
+            f"단축 = {2*X2:.3f}",
+            f"장축 = {2*Y2:.3f}",
+            f"장축 = {2*Y2:.3f}",
+        ]
+    })
 
-    # ✅ 단축 (X 방향)
-    fig.add_trace(go.Scatter(
-        x=[-X2, X2], y=[0, 0],
-        mode="lines+markers",
-        name=f"단축 = {2*X2:.3f}",
-        line=dict(dash="dash")
-    ))
-
-    # ✅ 장축 (Y 방향)
-    fig.add_trace(go.Scatter(
-        x=[0, 0], y=[-Y2, Y2],
-        mode="lines+markers",
-        name=f"장축 = {2*Y2:.3f}",
-        line=dict(dash="dash")
-    ))
-
-    max_r = max(X2, Y2) * 1.2
-
-    fig.update_layout(
-        title="타원 (X/Y 스케일 동일)",
-        xaxis=dict(
-            scaleanchor="y",
-            range=[-max_r, max_r],
-            zeroline=True
-        ),
-        yaxis=dict(
-            range=[-max_r, max_r],
-            zeroline=True
-        ),
-        width=500,
-        height=500,
-        showlegend=True
+    ellipse = alt.Chart(df_ellipse).mark_line().encode(
+        x=alt.X("x", scale=alt.Scale(domain=[-max(X2, Y2)*1.2, max(X2, Y2)*1.2])),
+        y=alt.Y("y", scale=alt.Scale(domain=[-max(X2, Y2)*1.2, max(X2, Y2)*1.2])),
+        tooltip=["x", "y"]
     )
 
-    return fig
+    axes = alt.Chart(df_axes).mark_line(strokeDash=[5, 5]).encode(
+        x="x",
+        y="y",
+        color="type"
+    )
+
+    chart = (ellipse + axes).properties(
+        width=400,
+        height=400,
+        title="타원 (X/Y 스케일 동일)"
+    )
+
+    return chart
 
 
 # ================= Streamlit UI =================
@@ -106,13 +97,10 @@ if st.button("계산"):
     X2, Y2, X, Y = calc_all_interpolated(A, B, H)
 
     st.subheader("📊 계산 결과")
-    st.write(f"단축 반지름 X2: {X2:.3f}")
-    st.write(f"장축 반지름 Y2: {Y2:.3f}")
     st.write(f"단축 길이: {2*X2:.3f}")
     st.write(f"장축 길이: {2*Y2:.3f}")
     st.write(f"X: {X:.3f}")
     st.write(f"Y: {Y:.3f}")
 
-    st.subheader("🟢 타원 시각화")
-    fig = draw_ellipse_plotly(X2, Y2)
-    st.plotly_chart(fig, use_container_width=True)
+    st.subheader("🟢 타원")
+    st.altair_chart(draw_ellipse_altair(X2, Y2), use_container_width=True)
